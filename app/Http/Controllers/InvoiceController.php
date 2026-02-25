@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Models\Invoice;
 
 class InvoiceController extends Controller
 {
     public function create()
     {
-        return view('invoice.create');
+        $invoiceNo = Invoice::generateNomor();
+        return view('invoice.create', compact('invoiceNo'));
     }
 
     public function generate(Request $request)
@@ -56,6 +58,14 @@ class InvoiceController extends Controller
             'grand_total' => $grandTotal,
         ];
 
+        $parts = explode('/', $validated['invoice_no']); // ['CT','2026','02','001']
+
+        Invoice::create([
+            'invoice_no' => $validated['invoice_no'],
+            'tahun'      => (int) $parts[1],
+            'bulan'      => (int) $parts[2],
+            'urutan'     => (int) end($parts),
+        ]);
         $pdf = Pdf::loadView('invoice.pdf', $data)
             ->setPaper('a4', 'portrait');
 
